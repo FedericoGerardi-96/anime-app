@@ -1,0 +1,146 @@
+---
+import { Eye, EyeOff } from 'lucide-react';
+
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+import { Input, Button, Label, Checkbox } from '@/components/ui';
+import AuthLayout from '@/layouts/AuthLayout.astro';
+
+const lang = getLangFromUrl(Astro.url) as string;
+const t = useTranslations(lang);
+---
+
+<AuthLayout title='Login'>
+  <div class='mx-auto flex h-full w-2/3 flex-col justify-center text-white xl:w-1/2'>
+    <input id='lang' type='hidden' data-lang=`${lang ?? 'es'}` />
+    <div>
+      <p class='text-2xl'>{t('auth.register')}</p>
+      <p class='mt-2'>{t('auth.text')}</p>
+    </div>
+    <div class='mt-10'>
+      <!-- Login email and password form -->
+      <form id='register-form'>
+        <div>
+          <Label className='mb-2.5 block font-extrabold' htmlFor='name-register'>{t('auth.name')}</Label>
+          <Input
+            autoComplete='name'
+            type='text'
+            name='name'
+            id='name-register'
+            className='w-full h-12 leading-none'
+            placeholder='mail@user.com'
+            required
+          />
+        </div>
+        <div class='mt-4'>
+          <Label className='mb-2.5 block font-extrabold' htmlFor='email-register'>Email</Label>
+          <Input
+            autoComplete='email'
+            type='email'
+            name='email'
+            id='email-register'
+            className='w-full h-12 leading-none'
+            placeholder='mail@user.com'
+            required
+          />
+        </div>
+        <div class='mt-4'>
+          <Label className='mb-2.5 block font-extrabold' htmlFor='password-register'>Password</Label>
+          <div class='relative w-full'>
+            <Input
+              autoComplete='current-password'
+              type='password'
+              name='password'
+              id='password-register'
+              className='w-full h-12 leading-none relative'
+              required
+            />
+            <Button
+              id='toggle-password-type-register'
+              variant='ghost'
+              type='button'
+              className='absolute right-0 top-1/2 transform -translate-y-1/2 px-2 mr-1'>
+              <EyeOff id='eye' className='hidden' width={25} height={25} />
+              <Eye id='eyeOff' width={25} height={25} />
+            </Button>
+          </div>
+        </div>
+        <div class='mt-4 flex w-full flex-col justify-between sm:flex-row'>
+          <!-- Remember me -->
+          <div>
+            <Checkbox id='remember-data-register' />
+            <Label
+              htmlFor='remember-data-register'
+              className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+              {t('auth.remember')}
+            </Label>
+          </div>
+          <!-- Have account -->
+          <div>
+            <a href={`/${lang ?? 'es'}/login`} class='text-sm hover:text-gray-200'>{t('auth.haveAccount')}</a>
+          </div>
+        </div>
+        <div class='my-10'>
+          <Button type='submit' id='submit-register' className='w-full p-5 hover:bg-orange-800'
+            >{t('auth.register')}</Button
+          >
+        </div>
+      </form>
+    </div>
+  </div>
+</AuthLayout>
+
+<script>
+  import { actions } from 'astro:actions';
+  import { navigate } from 'astro:transitions/client';
+
+  document.addEventListener('astro:page-load', () => {
+    const form = document.getElementById('register-form') as HTMLFormElement;
+    const buttonTooglePasswordType = document.getElementById('toggle-password-type-register') as HTMLElement;
+    const checkRemember = document.getElementById('remember-data-register') as HTMLInputElement;
+    const submitButton = document.getElementById('submit-register') as HTMLButtonElement;
+
+    buttonTooglePasswordType?.addEventListener('click', () => {
+      const passwordInput = document.getElementById('password-register') as HTMLInputElement;
+      const isPassword = passwordInput?.type === 'password';
+
+      passwordInput.type = isPassword ? 'text' : 'password';
+
+      document.getElementById('eye')?.classList.toggle('hidden', !isPassword);
+      document.getElementById('eyeOff')?.classList.toggle('hidden', isPassword);
+    });
+
+    checkRemember?.addEventListener('click', () => {
+      const isChecked = checkRemember.getAttribute('data-state') === 'checked';
+      const state = isChecked ? 'unchecked' : 'checked';
+      checkRemember.setAttribute('data-state', state);
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitButton?.setAttribute('disabled', 'disabled');
+      const formData = new FormData(form);
+
+      const { error } = await actions.registerUser(formData);
+
+      if (error) {
+        const errorParse = JSON.parse(JSON.stringify(error));
+        console.log(errorParse);
+        submitButton?.removeAttribute('disabled');
+        return;
+      }
+      formData.delete('password');
+      formData.delete('rememberMe');
+      const { error: error2 } = await actions.InsertUserFirestore(formData);
+
+      if (error2) {
+        const errorParse = JSON.parse(JSON.stringify(error2));
+        console.log(errorParse);
+        submitButton?.removeAttribute('disabled');
+        return;
+      }
+
+      const lang = document.getElementById('lang')?.getAttribute('data-lang') as string;
+      navigate(`/${lang}/login`);
+    });
+  });
+</script>

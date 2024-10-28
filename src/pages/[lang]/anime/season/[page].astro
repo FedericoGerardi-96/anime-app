@@ -1,0 +1,77 @@
+---
+import { actions } from 'astro:actions';
+
+import CardAnime from '@/components/anime/CardAnime.astro';
+import MainLayout from '@/layouts/MainLayout.astro';
+import CardsAnimeSkeleton from '@/components/Skeleton/CardsAnimeSkeleton.astro';
+import { PaginationComponent } from '@/components/shared/Pagination';
+import { getLangFromUrl } from '@/i18n/utils';
+import { SelectSeason } from '@/components/anime';
+import { getSeasonOfTheYear } from '@/utils';
+
+const { page } = Astro.params;
+const yearCookie = Astro.cookies.get('year');
+const seasonCookie = Astro.cookies.get('season');
+const season = seasonCookie?.value ?? (getSeasonOfTheYear('en').toLowerCase() as string);
+const year = yearCookie?.value ?? (new Date().getFullYear() as number);
+
+if (page === undefined || !parseInt(page)) {
+  throw new Error('Slug is required');
+}
+
+const { error, data } = await actions.GetSeasonAnimeByYearAndSeason({
+  page: +page,
+  size: 12,
+  year: +year,
+  season: season.toString(),
+});
+
+const lang = getLangFromUrl(Astro.url) as string;
+
+if (error) {
+  console.log(error);
+}
+---
+
+<MainLayout title='Anime season Page'>
+  <section class='container mx-auto px-10 py-8'>
+    <div class='my-10'>
+      <SelectSeason client:only='react' />
+    </div>
+
+    <div
+      id='cards-anime'
+      class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 grid-auto-rows-[200px] items-center justify-items-center gap-4 mb-12'>
+      {
+        data?.data?.map((anime, index) => (
+          <CardAnime
+            idAnime={anime.mal_id}
+            total={data.data.length}
+            index={index}
+            title={anime.title}
+            year={anime.year}
+            rating={anime.score}
+            image={anime.images.webp.large_image_url}
+          />
+        ))
+      }
+    </div>
+    <div id='skeleton-cards' class='hidden'>
+      <CardsAnimeSkeleton maxLenght={data?.pagination.items.per_page} />
+    </div>
+    {data && <PaginationComponent client:only='react' pagination={data.pagination} />}
+  </section>
+</MainLayout>
+
+<script is:inline>
+  document.addEventListener('astro:before-preparation', async (ev) => {
+    const changepagination = JSON.parse(window.localStorage.getItem('changePagination') ?? 'false');
+    if (changepagination) {
+      const skeleton = document.getElementById('skeleton-cards');
+      const cardsAnime = document.getElementById('cards-anime');
+      skeleton?.classList.remove('hidden');
+      cardsAnime?.classList.add('hidden');
+      window.localStorage.setItem('changePagination', `false`);
+    }
+  });
+</script>

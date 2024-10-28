@@ -1,0 +1,93 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import { getLangFromUrl } from '@/i18n/utils';
+import { Image } from 'astro:assets';
+
+
+import alice from '@/assets/images/Alice.avif';
+import '@/styles/global.css';
+import { Toast } from '@/components/shared/Toast';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+const lang = getLangFromUrl(Astro.url) as string;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <script is:inline>
+      function setDarkMode(document) {
+        const getThemePreference = () => {
+          if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+            return localStorage.getItem('theme');
+          }
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        };
+
+        const isDark = getThemePreference() === 'dark';
+        document.documentElement.classList[isDark ? 'add' : 'remove']('dark');
+
+        if (typeof localStorage !== 'undefined') {
+          const observer = new MutationObserver(() => {
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+          });
+          observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        }
+      }
+      setDarkMode(document);
+      document.addEventListener('astro:before-swap', (ev) => {
+        setDarkMode(ev.newDocument);
+      });
+    </script>
+    <meta charset='UTF-8' />
+    <meta name='description' content='Astro description' />
+    <meta name='viewport' content='width=device-width' />
+    <link rel='icon' type='image/svg+xml' href='/favicon.avif' />
+    <meta name='generator' content={Astro.generator} />
+    <title>{title}</title>
+    <ClientRouter />
+  </head>
+  <body>
+    <main>
+      <div class='relative flex h-full w-full flex-col md:flex-row'>
+        <!-- Slot - Contenido principal -->
+        <div class='w-full h-screen md:w-1/2 md:h-screen relative z-20'>
+          <slot />
+        </div>
+
+        <!-- Imagen de fondo para pantallas grandes -->
+        <div class='hidden md:block w-full md:w-1/2 relative h-screen'>
+          <Image
+            loading='eager'
+            width={0}
+            height={0}
+            alt=''
+            src={alice}
+            class='absolute h-full w-full object-cover z-10'
+          />
+          <div class='absolute top-0 left-0 bg-[rgba(0,0,0,.6)] w-full h-full z-20'></div>
+        </div>
+
+        <!-- Imagen de fondo con overlay en pantallas pequeñas -->
+        <div class='block md:hidden absolute top-0 left-0 w-full h-full z-10'>
+          <Image
+            loading='eager'
+            width={0}
+            height={0}
+            alt=''
+            src={alice}
+            class='absolute h-full w-full object-cover z-10'
+          />
+          <div class='absolute top-0 left-0 bg-[rgba(0,0,0,.9)] w-full h-full z-20'></div>
+        </div>
+      </div>
+      <Toast client:load />
+    </main>
+  </body>
+</html>

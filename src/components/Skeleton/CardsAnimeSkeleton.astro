@@ -1,0 +1,24 @@
+---
+interface Props {
+  maxLenght?: number;
+}
+
+import { Skeleton } from '@/components/ui/skeleton';
+
+const { maxLenght = 1 } = Astro.props;
+---
+
+<div
+  class='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center justify-items-center gap-4 mb-12'>
+  {
+    Array.from({ length: maxLenght }).map(() => (
+      <Skeleton className='relative rounded-lg w-full h-72 md:h-96'>
+        <Skeleton className='object-cover' />
+        <div class='absolute bottom-0 left-0 w-full p-4'>
+          <Skeleton className='h-4 w-3/4 mb-2' />
+          <Skeleton className='h-4 w-1/2' />
+        </div>
+      </Skeleton>
+    ))
+  }
+</div>

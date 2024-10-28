@@ -1,0 +1,109 @@
+---
+import { Badge, Separator } from '@/components/ui';
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+import type { IAnime } from '@/interface';
+import { translateSeason, translateSpanishDayOfWeek } from '@/utils';
+
+interface Props {
+  animeDetail: IAnime;
+}
+const url = new URL(Astro.request.url);
+const lang = getLangFromUrl(url);
+const t = useTranslations(lang);
+const { animeDetail } = Astro.props;
+
+const {
+  data: {
+    score,
+    scored_by: scoredBy,
+    rank,
+    year,
+    season,
+    genres,
+    episodes,
+    source,
+    broadcast: { day },
+  },
+} = animeDetail;
+
+let rankColor = '';
+
+if (rank > 1000) {
+  rankColor = 'text-red-800';
+} else if (rank > 500 && rank <= 1000) {
+  rankColor = 'text-yellow-800';
+} else if (rank > 0 && rank <= 500) {
+  rankColor = 'text-green-800';
+} else {
+  rankColor = 'text-gray-400';
+}
+
+function obtenerClaseEpoca() {
+  switch (season) {
+    case 'winter':
+      return 'winter';
+    case 'summer':
+      return 'bg-gradient-to-r from-yellow-400 to-yellow-600';
+    case 'fall':
+      return 'bg-gradient-to-r from-yellow-600 to-yellow-800';
+    case 'spring':
+      return 'bg-gradient-to-r from-green-600 to-green-800';
+    default:
+      return 'bg-yellow-700 text-white hover:bg-yellow-700 ';
+  }
+}
+---
+
+<aside class='w-auto flex xl:flex-row flex-col justify-between space-x-4 border bg-Autumn border-gray-200 p-3 rounded shadow-lg xl:h-28'>
+  <div class='flex flex-col items-center justify-start xl:justify-center xl:w-[15%] w-full'>
+    <Badge variant='default' className='text-white text-xs h-6'>{t('anime.score')}:</Badge>
+    {
+      score ? (
+        <p>{score}</p>
+        <p>{(scoredBy) + " Users"}</p>
+      ) : (
+        <p class="text-2xl text-gray-400 mt-4">N/A</p>
+      )
+    }
+  </div>
+  <Separator orientation='horizontal' className='mx-6 xl:hidden block my-2' />
+  <Separator orientation='vertical' className='mx-6 xl:block hidden' />
+  <div class='flex flex-col justify-between xl:w-[85%] w-[95%] my-2'>
+    <div class='flex flex-wrap justify-between gap-2'>
+      <p>{t('anime.rank')}: <span class={`text-xl font-bold ${rankColor} ml-2`}>{rank ?? 'N/A'}</span></p>
+      <Separator orientation='vertical' className='mx-6' />
+      <p>{t('anime.source')}: {source ?? 'N/A'}</p>
+      <Separator orientation='vertical' className='mx-6' />
+      <p>{t('anime.broadcast')}: {translateSpanishDayOfWeek(day) ?? 'N/A'}</p>
+      <Separator orientation='vertical' className='mx-6' />
+      <p>{t('anime.episodes')}: {episodes ?? 'N/A'}</p>
+    </div>
+    <Separator orientation='horizontal' className='my-2' />
+    <div class='flex flex-col sm:flex-row  justify-between gap-4'>            
+      <div class="flex gap-2 md:w-[40%] lg:w-1/4 w-full">
+        <Badge variant={season ? season : "default" as any} className={`text-white text-xs capitalize m-0 w-16 h-6`}>
+          {season ? translateSeason(season, lang as string) : "N/A"}
+        </Badge> | {year}
+      </div>      
+      <Separator orientation='horizontal' className='sm:hidden block my-2' />
+      <div class='flex flex-wrap justify-center md:justify-between gap-6 md:w-[60%] lg:w-3/4 w-full'>
+        {
+          genres?.map((genre: any) => (
+            <Badge variant='default' className='text-xs h-6'>
+              {genre.name}
+            </Badge>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</aside>
+<!-- <ul class='mt-4 list-disc list-inside'>
+  <li>Episodes: {episodes}</li>
+  <li>Status: {status}</li>
+
+  <li>Rank: {rank}</li>
+  <li>Year: {year}</li>
+  <li>Season: {season}</li>
+  <li>Genres: {genres.map((genre: any) => genre.name).join(', ')}</li>
+</ul> -->

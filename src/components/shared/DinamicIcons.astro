@@ -1,0 +1,17 @@
+---
+// Icons
+import { Calendar, Search, SmileIcon } from 'lucide-react';
+
+interface Props {
+  icon: string;
+}
+
+const { icon } = Astro.props;
+---
+
+<div>
+  {icon === 'anime' && <SmileIcon width={24} height={24} />}
+  {icon === 'mangas' && <SmileIcon width={24} height={24} />}
+  {icon === 'favorites' && <Search width={24} height={24} />}
+  {icon === 'calendar' && <Calendar width={24} height={24} />}
+</div>

@@ -1,0 +1,130 @@
+---
+import Hero from '@/components/home/Hero.astro';
+import MainLayout from '@/layouts/MainLayout.astro';
+import { Button } from '@/components/ui/button';
+
+const { user, isLoggedIn } = Astro.locals;
+
+if(!isLoggedIn || !user) {
+	return Astro.redirect("/login");
+}
+
+const currentlyWatching = [
+  { id: 1, title: 'Attack on Titan', progress: 'Episode 12/25' },
+  { id: 2, title: 'My Hero Academia', progress: 'Episode 5/25' },
+  { id: 3, title: 'Demon Slayer', progress: 'Episode 8/26' },
+];
+
+const planToWatch = [
+  { id: 4, title: 'One Piece' },
+  { id: 5, title: 'Fullmetal Alchemist: Brotherhood' },
+  { id: 6, title: 'Death Note' },
+];
+
+const favoriteLists = [
+  { id: 1, name: 'Top Shonen', animeCount: 15 },
+  { id: 2, name: 'Best of 2023', animeCount: 10 },
+  { id: 3, name: 'All-Time Favorites', animeCount: 20 },
+];
+
+---
+
+<MainLayout title='Home Page'>
+  <Hero />
+  <div class='flex flex-col bg-bg-100 text-text-100'>
+    <div class='flex-1 flex'>
+      <div class='flex-1 p-6'>
+        <section class='mb-8'>
+          <h2 class='text-2xl font-semibold mb-4'>Currently Watching</h2>
+          <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {
+              currentlyWatching.map((anime) => (
+                <dib>
+                  <div class='p-4'>
+                    <h3 class='text-lg font-semibold'>{anime.title}</h3>
+                    <p class='text-text-200'>{anime.progress}</p>
+                  </div>
+                  <div class='p-4'>
+                    <Button variant='outline' size='sm'>
+                      Update Progress
+                    </Button>
+                  </div>
+                </dib>
+              ))
+            }
+          </div>
+        </section>
+        <section class='mb-8'>
+          <h2 class='text-2xl font-semibold mb-4'>Plan to Watch</h2>
+          <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {
+              planToWatch.map((anime) => (
+                <div>
+                  <div class='p-4'>
+                    <h3 class='text-lg font-semibold'>{anime.title}</h3>
+                  </div>
+                  <div class='p-4'>
+                    <Button variant='outline' size='sm'>
+                      Start Watching
+                    </Button>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </section>
+        <section>
+          <h2 class='text-2xl font-semibold mb-4'>Your Anime Lists</h2>
+          <div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+            {
+              favoriteLists.map((list) => (
+                <div>
+                  <div class='p-4'>
+                    <h3 class='text-lg font-semibold'>{list.name}</h3>
+                    <p class='text-text-200'>{list.animeCount} anime</p>
+                  </div>
+                  <div class='p-4'>
+                    <Button variant='outline' size='sm'>
+                      View List
+                    </Button>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </section>
+      </div>
+      <aside class='w-64 p-6 bg-bg-200'>
+        <div class='space-y-4'>
+          <Button className='w-full bg-primary-100'>
+            <!-- <Icon name="plus-circle" class="mr-2 h-4 w-4" /> Add Anime -->
+          </Button>
+          <Button className='w-full' variant='outline'>
+            <!-- <Icon name="list" class="mr-2 h-4 w-4" /> Create New List -->
+          </Button>
+        </div>
+        <div class='mt-8'>
+          <h3 class='text-lg font-semibold mb-2'>Quick Stats</h3>
+          <ul class='space-y-2'>
+            <li class='flex justify-between'>
+              <span>Watching:</span>
+              <span>12</span>
+            </li>
+            <li class='flex justify-between'>
+              <span>Completed:</span>
+              <span>67</span>
+            </li>
+            <li class='flex justify-between'>
+              <span>Plan to Watch:</span>
+              <span>23</span>
+            </li>
+            <li class='flex justify-between'>
+              <span>Total Days:</span>
+              <span>42.5</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</MainLayout>

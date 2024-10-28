@@ -1,0 +1,54 @@
+---
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+import { Image } from 'astro:assets';
+
+import HeroImage from '@/assets/images/girl-pc.avif';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<header>
+  <div class='relative'>
+
+    <!-- Hero text -->
+    <div
+      class='flex flex-col text-center justify-center items-center lg:text-start lg:items-stretch w-full lg:w-auto pl-10 pr-10 py-40 lg:pr-0 md:py-64 z-20'>
+      <h1 class='relative text-5xl lg:text-6xl font-bold mb-4 z-40'>
+        {t('hero.title')}
+        <span class='bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600'>Tracker</span>
+      </h1>
+      <p class="relative text-lg md:text-1xl z-40">
+        {t('hero.subtitle')}
+      </p>
+    </div>
+
+    <!-- Image for large screens -->
+    <div
+      class='hidden lg:block w-1/2 h-full absolute top-0 bottom-0 right-0 z-20'
+      style={'clip-path: polygon(62% 0, 100% 0, 100% 100%, 0 100%);'}>
+      <Image
+        loading='eager'
+        widths={[240, 540, 720, HeroImage.width]}
+        sizes={`(max-width: 360px) 240px, (max-width: 720px) 540px, (max-width: 1600px) 720px, ${HeroImage.width}px`}
+        alt=''
+        src={HeroImage}
+        class='absolute h-full w-full rounded-lg shadow-lg object-cover object-top z-10'
+      />
+      <div class='absolute top-0 left-0 bg-[rgba(0,0,0,.8)] lg:bg-[rgba(0,0,0,.4)] w-full h-full z-20'></div>
+    </div>
+
+    <!-- Background image with overlay for small screens -->
+    <div class='block lg:hidden absolute top-0 left-0 w-full h-full z-10'>
+      <Image
+        loading='eager'
+        width={0}
+        height={0}
+        alt=''
+        src={HeroImage}
+        class='absolute h-full w-full object-cover object-left-top z-10'
+      />
+      <div class='absolute top-0 left-0 bg-[rgba(0,0,0,.7)] w-full h-full z-20'></div>
+    </div>
+  </div>
+</header>

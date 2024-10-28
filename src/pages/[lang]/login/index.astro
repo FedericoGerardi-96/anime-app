@@ -1,0 +1,236 @@
+---
+import { Image } from 'astro:assets';
+import { Eye, EyeOff } from 'lucide-react';
+
+import { getLangFromUrl, useTranslations } from '@/i18n/utils';
+import { Input, Button, Label, Checkbox } from '@/components/ui';
+import AuthLayout from '@/layouts/AuthLayout.astro';
+
+const lang = getLangFromUrl(Astro.url) as string;
+const t = useTranslations(lang);
+---
+
+<AuthLayout title='Login'>
+  <div class='mx-auto flex h-full w-2/3 flex-col justify-center text-white xl:w-1/2'>
+    <input name='lang' id='lang' type='hidden' data-lang=`${lang ?? 'es'}` />
+    <div>
+      <p class='text-2xl'>Login</p>
+      <p class='mt-2'>{t('auth.text')}</p>
+    </div>
+    <div class='my-6'>
+      <Button
+        id='btn-google'
+        className='flex w-full justify-center rounded-3xl border-none bg-white p-1 text-black hover:bg-gray-200 sm:p-2'>
+        <Image
+          width={24}
+          height={24}
+          alt='google'
+          src='https://freesvg.org/img/1534129544.png'
+          class='mr-2 object-fill'
+        />
+        {t('auth.google')}
+      </Button>
+    </div>
+    <div>
+      <fieldset class='border-t border-solid border-gray-600'>
+        <legend class='mx-auto px-2 text-center text-sm'>{t('auth.otherMethods')}</legend>
+      </fieldset>
+    </div>
+    <div class='mt-10'>
+      <!-- Login email and password form -->
+      <form id='login-form'>
+        <div>
+          <Label className='mb-2.5 block font-extrabold' htmlFor='email-login'>Email</Label>
+          <Input
+            autoComplete='email'
+            type='email'
+            name='email'
+            id='email-login'
+            className='w-full h-12 leading-none'
+            placeholder='mail@user.com'
+          />
+          <div class='flex flex-col gap-2'>
+            <span id='emailFormatError' class='text-red-600 hidden'>{t('auth.emailFormatError')}</span>
+            <span id='emailEmpty' class='text-red-600 hidden'>{t('auth.emailEmpty')}</span>
+          </div>
+        </div>
+        <div class='mt-4'>
+          <Label className='mb-2.5 block font-extrabold' htmlFor='password-login'>Password</Label>
+          <div class='relative w-full'>
+            <Input
+              autoComplete='current-password'
+              type='password'
+              name='password'
+              id='password-login'
+              className='w-full h-12 leading-none relative'
+            />
+            <Button
+              id='toggle-password-type-login'
+              variant='ghost'
+              type='button'
+              className='absolute right-0 top-1/2 transform -translate-y-1/2 px-2 mr-1'>
+              <EyeOff id='eye' className='hidden' width={25} height={25} />
+              <Eye id='eyeOff' width={25} height={25} />
+            </Button>
+          </div>
+          <div class='flex flex-col gap-2'>
+            <span id='passwordEmpty' class='text-red-600 hidden'>{t('auth.passwordLengthError')}</span>
+            <span id='passwordFormatError' class='text-red-600 hidden'>{t('auth.passwordEmptyError')}</span>
+          </div>
+        </div>
+        <div class='mt-4 flex w-full flex-col justify-between sm:flex-row'>
+          <!-- Remember me -->
+          <div class='flex items-center space-x-2'>
+            <Checkbox id='remember-data-login' />
+            <Label htmlFor='remember' className='text-sm font-medium leading-none'>
+              {t('auth.remember')}
+            </Label>
+          </div>
+          <!-- Have account -->
+          <div>
+            <a href={`/${lang ?? 'es'}/register`} class='text-sm hover:text-gray-200'>{t('auth.dontHaveAccount')}</a>
+          </div>
+        </div>
+        <div class='my-10'>
+          <Button type='submit' id='submit-login' className='w-full p-5 hover:bg-orange-800'>Login</Button>
+        </div>
+      </form>
+    </div>
+  </div>
+</AuthLayout>
+
+<script>
+  import { firebase } from '@/firebase/client';
+  import { openToast, toastMessage, toastTitle, toastType } from '@/store';
+  import { actions } from 'astro:actions';
+  import { navigate } from 'astro:transitions/client';
+  import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+
+  document.addEventListener('astro:page-load', () => {
+    const buttonTooglePasswordType = document.getElementById('toggle-password-type-login') as HTMLElement;
+    const checkRemember = document.getElementById('remember-data-login') as HTMLInputElement;
+
+    const submitButton = document.getElementById('submit-login') as HTMLButtonElement;
+    const form = document.getElementById('login-form') as HTMLFormElement;
+
+    const btnGoogle = document.querySelector('#btn-google');
+
+    buttonTooglePasswordType?.addEventListener('click', () => {
+      const passwordInput = document.getElementById('password-login') as HTMLInputElement;
+      const isPassword = passwordInput?.type === 'password';
+
+      passwordInput.type = isPassword ? 'text' : 'password';
+
+      document.getElementById('eye')?.classList.toggle('hidden', !isPassword);
+      document.getElementById('eyeOff')?.classList.toggle('hidden', isPassword);
+    });
+
+    checkRemember?.addEventListener('click', () => {
+      const isChecked = checkRemember.getAttribute('data-state') === 'checked';
+      const state = isChecked ? 'unchecked' : 'checked';
+      checkRemember.setAttribute('data-state', state);
+    });
+
+    const validateForm = (form: FormData): boolean => {
+      const emailEmpty = document.getElementById('emailEmpty') as HTMLElement;
+      const emailFormatError = document.getElementById('emailFormatError') as HTMLElement;
+      const passwordEmpty = document.getElementById('passwordEmpty') as HTMLElement;
+      const passwordFormatError = document.getElementById('passwordFormatError') as HTMLElement;
+      let isValid = true;
+
+      const email = form.get('email') as string;
+      const password = form.get('password') as string;
+
+      // Validar email
+      if (!email || email === '') {
+        emailEmpty.classList.remove('hidden');
+        isValid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        emailFormatError.classList.remove('hidden');
+        isValid = false;
+      } else {
+        emailEmpty.classList.add('hidden');
+        emailFormatError.classList.add('hidden');
+      }
+
+      // Validar contraseña
+      if (!password || password === '') {
+        passwordEmpty.classList.remove('hidden');
+        isValid = false;
+      } else if (password.length < 6) {
+        passwordFormatError.classList.remove('hidden');
+        isValid = false;
+      } else {
+        passwordEmpty.classList.add('hidden');
+        passwordFormatError.classList.add('hidden');
+      }
+
+      return isValid;
+    };
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitButton?.setAttribute('disabled', 'disabled');
+
+      const formData = new FormData(form);
+      formData.append('rememberMe', JSON.stringify(checkRemember.getAttribute('data-state') === 'checked'));
+
+      if (!validateForm(formData)) {
+        submitButton?.removeAttribute('disabled');
+        return;
+      }
+
+      const { error } = await actions.loginUser(formData);
+
+      if (error) {
+        openToast.set(true);
+        toastMessage.set('Credenciales no son correctas!');
+        toastTitle.set('Credenciales incorrectas!');
+        toastType.set('destructive');
+
+        submitButton?.removeAttribute('disabled');
+        return;
+      }
+      const lang = document.getElementById('lang')?.getAttribute('data-lang') as string;
+      navigate(`/${lang}/`);
+    });
+
+    btnGoogle?.addEventListener('click', async () => {
+      btnGoogle?.setAttribute('disabled', 'disabled');
+
+      const provider = new GoogleAuthProvider();
+
+      try {
+        const credential = await signInWithPopup(firebase.auth, provider);        
+
+        const { error } = await actions.loginWithGoogle(credential);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        const { error: error2 } = await actions.InsertUserFirestoreGoogle(credential);
+
+        btnGoogle.innerHTML = 'Ingresando...';
+        const lang = document.getElementById('lang')?.getAttribute('data-lang') as string;
+        navigate(`/${lang}/`);
+      } catch (error) {
+        const errorParse = JSON.parse(JSON.stringify(error));
+        console.error(errorParse);
+        openToast.set(true);
+        toastTitle.set('Error al iniciar sesión con Google');
+        toastType.set('destructive');
+        btnGoogle?.removeAttribute('disabled');
+      }
+    });
+  });
+</script>
+
+<style>
+  .error {
+    @apply border-red-600;
+  }
+  .text-error {
+    @apply text-red-600;
+  }
+</style>
